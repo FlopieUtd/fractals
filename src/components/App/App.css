@@ -1,0 +1,24 @@
+* {
+  box-sizing: border-box;
+  font-family: monospace;
+}
+
+.app {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background: black
+}
+
+.view-port {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.canvas {
+  border: 1px solid lime;
+}

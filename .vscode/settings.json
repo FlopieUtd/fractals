@@ -1,0 +1,12 @@
+{
+  "eslint.options": {
+    "configFile": ".eslintrc.json",
+    "cache": true
+  },
+  "eslint.packageManager": "yarn",
+  "eslint.run": "onSave",
+  "eslint.validate": [
+    "typescript",
+    "typescriptreact"
+  ],
+}
