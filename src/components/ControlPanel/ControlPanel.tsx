@@ -15,18 +15,18 @@ export const ControlPanel = ({
   return (
     <div className="control-panel">
       <div className="console">Welcome to the chaos game.</div>
-      <button onClick={onReset}>Reset</button>
       <input
         type="range"
         min="3"
         max="6"
         value={numberOfOuterPoints}
         className="slider"
-        onChange={(e) => {
+        onChange={e => {
           console.log("change");
           setnumberOfOuterPoints(Number(e.target.value));
         }}
       />
+      <button onClick={onReset}>Reset</button>
     </div>
   );
 };

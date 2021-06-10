@@ -33,15 +33,6 @@ const labelMap: { [key: number]: string } = {
 
 export const App = () => {
   const ref = useRef<HTMLCanvasElement>(null);
-  const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
-
-  useEffect(() => {
-    if (ref.current) {
-      console.log("init");
-      setContext(ref.current.getContext("2d"));
-      console.log(context);
-    }
-  }, [context]);
 
   // Game state
   const [gameState, setGameState] = useState(GameState.Waiting);
@@ -54,19 +45,22 @@ export const App = () => {
   const [startingPoint, setStartingPoint] = useState<Point>();
 
   // Generated state
-  // This variable may actually not be necessary, just keep track of last point
-  const [generatedPoints, setGeneratedPoints] = useState<Point[]>([]);
+  const [lastGeneratedPoint, setLastGeneratedPoint] = useState<Point>();
+  const [iterations, setIterations] = useState(0);
 
-  const drawPoint = useCallback(
-    ({ coordinate }: Point) => {
-      if (!context) {
-        throw new Error("Could not get canvas context!");
-      }
-      context.fillStyle = "lime";
-      context.fillRect(coordinate.x - 1, coordinate.y - 1, 2, 2);
-    },
-    [context]
-  );
+  const getContext = useCallback(() => {
+    const context = ref.current?.getContext("2d");
+    if (!context) {
+      throw new Error("Could not get canvas context!");
+    }
+    return context;
+  }, [ref])
+
+  const drawPoint = useCallback(({ coordinate }: Point) => {
+    const context = getContext();
+    context.fillStyle = "lime";
+    context.fillRect(coordinate.x - 1, coordinate.y - 1, 2, 2);
+  }, [getContext]);
 
   const addOuterPoint = useCallback(
     (coordinate: Point) => {
@@ -78,17 +72,10 @@ export const App = () => {
     [outerPoints]
   );
 
-  const addGeneratedPoint = useCallback(
-    (coordinate: Point) => {
-      setGeneratedPoints([...generatedPoints, coordinate]);
-    },
-    [generatedPoints]
-  );
-
   const processPoint = useCallback(
-    (coordinate: Point, fn: (coordinate: Point) => void) => {
-      drawPoint(coordinate);
-      fn(coordinate);
+    (point: Point, fn: (point: Point) => void) => {
+      drawPoint(point);
+      fn(point);
     },
     [drawPoint]
   );
@@ -125,7 +112,10 @@ export const App = () => {
     setGameState(GameState.Waiting);
     setOuterPoints([]);
     setStartingPoint(undefined);
-    setGeneratedPoints([]);
+    setLastGeneratedPoint(undefined);
+
+    const context = getContext();
+
     if (!context) {
       throw new Error("Could not get canvas context!");
     }
@@ -133,12 +123,11 @@ export const App = () => {
       context.fillStyle = "black";
       context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     }, 0);
-  }, [context]);
+  }, [getContext]);
 
   const generateNextPoint = useCallback(() => {
-    const lastPoint: Point = generatedPoints.length
-      ? generatedPoints[generatedPoints.length - 1]
-      : (startingPoint as Point);
+    setIterations(iterations + 1);
+    const lastPoint: Point = lastGeneratedPoint ?? (startingPoint as Point);
     const lastCoordinate = lastPoint.coordinate;
     const targetPoint =
       outerPoints[Math.floor(Math.random() * outerPoints.length)];
@@ -150,28 +139,35 @@ export const App = () => {
       },
       label: "generated-point",
     };
-    processPoint(newPoint, addGeneratedPoint);
+    processPoint(newPoint, setLastGeneratedPoint);
   }, [
-    generatedPoints,
     startingPoint,
     outerPoints,
-    addGeneratedPoint,
+    setLastGeneratedPoint,
     processPoint,
+    setIterations, 
+    iterations,
+    lastGeneratedPoint
   ]);
 
   useEffect(() => {
     if (
       outerPoints.length === numberOfOuterPoints &&
       startingPoint &&
-      generatedPoints.length < GENERATED_POINTS_AMOUNT &&
       gameState === GameState.GeneratingPoints
     ) {
-      generateNextPoint();
+      for (let i = 0; i < GENERATED_POINTS_AMOUNT; i++) {
+        if (      
+          gameState === GameState.GeneratingPoints
+          ) {
+            generateNextPoint();
+          }
+      }
+      setGameState(GameState.Done)
     }
   }, [
     outerPoints,
     startingPoint,
-    generatedPoints,
     generateNextPoint,
     numberOfOuterPoints,
     gameState,
